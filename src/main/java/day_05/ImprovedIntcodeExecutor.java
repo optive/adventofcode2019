@@ -14,6 +14,7 @@ public class ImprovedIntcodeExecutor {
     private final Queue<Integer> input;
     private final int[] program;
     private int pointer;
+    private int relativeBase;
     private boolean isTerminated;
 
     public boolean isTerminated() {
@@ -25,10 +26,21 @@ public class ImprovedIntcodeExecutor {
         this.program = program;
     }
 
+    public ImprovedIntcodeExecutor(final Queue<Integer> input, final int[] program, final int padding) {
+        this(input, Arrays.copyOf(program, program.length + padding));
+    }
+
     public ImprovedIntcodeExecutor(final Queue<Integer> input, final String program) {
         this.input = input;
         final String[] values = program.split(",");
         this.program = Arrays.asList(values).stream().mapToInt(Integer::parseInt).toArray();
+    }
+
+    public ImprovedIntcodeExecutor(final Queue<Integer> input, final String program, final int padding) {
+        this.input = input;
+        final String[] values = program.split(",");
+        final int[] programArray = Arrays.asList(values).stream().mapToInt(Integer::parseInt).toArray();
+        this.program = Arrays.copyOf(programArray, programArray.length + padding);
     }
 
     public Queue<Integer> getOutput() {
@@ -44,7 +56,7 @@ public class ImprovedIntcodeExecutor {
 
     private boolean readOpcode(final int startIndex, final int[] program) {
         final int instruction = program[startIndex];
-        final int opcode = instruction % 10;
+        final int opcode = instruction % 100;
         final int mode1 = (instruction / 100) % 10;
         final int mode2 = (instruction / 1000) % 10;
         final int mode3 = (instruction / 10000) % 10;
@@ -70,7 +82,7 @@ public class ImprovedIntcodeExecutor {
                 }
                 break;
             case 4:
-                output.add(program[program[startIndex + 1]]);
+                output.add(resolveParameter(program, program[startIndex + 1], mode1));
                 pointer += 2;
                 break;
             case 5:
@@ -104,6 +116,10 @@ public class ImprovedIntcodeExecutor {
                 pointer += 4;
                 break;
             case 9:
+                relativeBase += resolveParameter(program, program[startIndex + 1], mode1);
+                pointer += 2;
+                break;
+            case 99:
                 isTerminated = true;
                 return false;
             default:
@@ -115,9 +131,17 @@ public class ImprovedIntcodeExecutor {
 
     private int resolveParameter(final int[] program, final int value, final int mode) {
         if (mode == 0) {
+            // Position Mode
             return program[value];
-        } else {
+        } else if (mode == 1) {
+            // Immediate Mode
             return value;
+        } else if (mode == 2) {
+            // Relative Mode
+            return program[relativeBase + value];
+        } else {
+            System.out.println("Unknown parameter mode: " + mode);
+            return 0;
         }
     }
 
