@@ -22,7 +22,7 @@ public class IntcodeExecutor {
         }
     }
 
-    private boolean readOpcode(final int startIndex, final int[] input) {
+    protected boolean readOpcode(final int startIndex, final int[] input) {
         final int instruction = input[startIndex];
         switch (instruction) {
             case 1:
@@ -40,11 +40,11 @@ public class IntcodeExecutor {
         return true;
     }
 
-    private void executeAddition(final int[] input, final int num1, final int num2, final int destination) {
+    protected void executeAddition(final int[] input, final int num1, final int num2, final int destination) {
         input[destination] = input[num1] + input[num2];
     }
 
-    private void executeMultiplication(final int[] input, final int num1, final int num2, final int destination) {
+    protected void executeMultiplication(final int[] input, final int num1, final int num2, final int destination) {
         input[destination] = input[num1] * input[num2];
     }
 
