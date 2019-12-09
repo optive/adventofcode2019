@@ -16,9 +16,9 @@ public class Amplifier {
         return ie.isTerminated();
     }
 
-    public Integer getOutput() {
+    public Long getOutput() {
         ie.executeProgram();
-        final Queue<Integer> output = ie.getOutput();
+        final Queue<Long> output = ie.getOutput();
         return output.poll();
     }
 }

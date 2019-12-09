@@ -10,9 +10,9 @@ import java.util.Queue;
 
 public class ImprovedIntcodeExecutor {
 
-    private final Queue<Integer> output = new LinkedList<>();
+    private final Queue<Long> output = new LinkedList<>();
     private final Queue<Integer> input;
-    private final int[] program;
+    private final long[] program;
     private int pointer;
     private int relativeBase;
     private boolean isTerminated;
@@ -21,29 +21,29 @@ public class ImprovedIntcodeExecutor {
         return isTerminated;
     }
 
-    public ImprovedIntcodeExecutor(final Queue<Integer> input, final int[] program) {
+    public ImprovedIntcodeExecutor(final Queue<Integer> input, final long[] program) {
         this.input = input;
         this.program = program;
     }
 
-    public ImprovedIntcodeExecutor(final Queue<Integer> input, final int[] program, final int padding) {
+    public ImprovedIntcodeExecutor(final Queue<Integer> input, final long[] program, final int padding) {
         this(input, Arrays.copyOf(program, program.length + padding));
     }
 
     public ImprovedIntcodeExecutor(final Queue<Integer> input, final String program) {
         this.input = input;
         final String[] values = program.split(",");
-        this.program = Arrays.asList(values).stream().mapToInt(Integer::parseInt).toArray();
+        this.program = Arrays.asList(values).stream().mapToLong(Long::parseLong).toArray();
     }
 
     public ImprovedIntcodeExecutor(final Queue<Integer> input, final String program, final int padding) {
         this.input = input;
         final String[] values = program.split(",");
-        final int[] programArray = Arrays.asList(values).stream().mapToInt(Integer::parseInt).toArray();
+        final long[] programArray = Arrays.asList(values).stream().mapToLong(Long::parseLong).toArray();
         this.program = Arrays.copyOf(programArray, programArray.length + padding);
     }
 
-    public Queue<Integer> getOutput() {
+    public Queue<Long> getOutput() {
         return output;
     }
 
@@ -54,27 +54,27 @@ public class ImprovedIntcodeExecutor {
         }
     }
 
-    private boolean readOpcode(final int startIndex, final int[] program) {
-        final int instruction = program[startIndex];
+    private boolean readOpcode(final int startIndex, final long[] program) {
+        final int instruction = (int) program[startIndex];
         final int opcode = instruction % 100;
         final int mode1 = (instruction / 100) % 10;
         final int mode2 = (instruction / 1000) % 10;
         final int mode3 = (instruction / 10000) % 10;
         switch (opcode) {
             case 1:
-                program[program[startIndex + 3]] = resolveParameter(program, program[startIndex + 1], mode1) +
+                program[resolveIndex(program[startIndex + 3], mode3)] = resolveParameter(program, program[startIndex + 1], mode1) +
                         resolveParameter(program, program[startIndex + 2], mode2);
                 pointer += 4;
                 break;
             case 2:
-                program[program[startIndex + 3]] = resolveParameter(program, program[startIndex + 1], mode1) *
+                program[resolveIndex(program[startIndex + 3], mode3)] = resolveParameter(program, program[startIndex + 1], mode1) *
                         resolveParameter(program, program[startIndex + 2], mode2);
                 pointer += 4;
                 break;
             case 3:
                 final Integer value = input.poll();
                 if (null != value) {
-                    program[program[startIndex + 1]] = value;
+                    program[resolveIndex(program[startIndex + 1], mode1)] = value;
                     pointer += 2;
                 } else {
                     // Pause executing for now - we will wait for a new input signal before resuming.
@@ -87,31 +87,31 @@ public class ImprovedIntcodeExecutor {
                 break;
             case 5:
                 if (resolveParameter(program, program[startIndex + 1], mode1) != 0) {
-                    pointer = resolveParameter(program, program[startIndex + 2], mode2);
+                    pointer = (int) resolveParameter(program, program[startIndex + 2], mode2);
                 } else {
                     pointer += 3;
                 }
                 break;
             case 6:
                 if (resolveParameter(program, program[startIndex + 1], mode1) == 0) {
-                    pointer = resolveParameter(program, program[startIndex + 2], mode2);
+                    pointer = (int) resolveParameter(program, program[startIndex + 2], mode2);
                 } else {
                     pointer += 3;
                 }
                 break;
             case 7:
                 if (resolveParameter(program, program[startIndex + 1], mode1) < resolveParameter(program, program[startIndex + 2], mode2)) {
-                    program[program[startIndex + 3]] = 1;
+                    program[resolveIndex(program[startIndex + 3], mode3)] = 1;
                 } else {
-                    program[program[startIndex + 3]] = 0;
+                    program[resolveIndex(program[startIndex + 3], mode3)] = 0;
                 }
                 pointer += 4;
                 break;
             case 8:
                 if (resolveParameter(program, program[startIndex + 1], mode1) == resolveParameter(program, program[startIndex + 2], mode2)) {
-                    program[program[startIndex + 3]] = 1;
+                    program[resolveIndex(program[startIndex + 3], mode3)] = 1;
                 } else {
-                    program[program[startIndex + 3]] = 0;
+                    program[resolveIndex(program[startIndex + 3], mode3)] = 0;
                 }
                 pointer += 4;
                 break;
@@ -129,19 +129,29 @@ public class ImprovedIntcodeExecutor {
         return true;
     }
 
-    private int resolveParameter(final int[] program, final int value, final int mode) {
+    private long resolveParameter(final long[] program, final long value, final int mode) {
         if (mode == 0) {
             // Position Mode
-            return program[value];
+            return program[(int) value];
         } else if (mode == 1) {
             // Immediate Mode
             return value;
         } else if (mode == 2) {
             // Relative Mode
-            return program[relativeBase + value];
+            return program[relativeBase + (int) value];
         } else {
             System.out.println("Unknown parameter mode: " + mode);
             return 0;
+        }
+    }
+
+    private int resolveIndex(final long value, final int mode) {
+        if (mode == 2) {
+            // Relative Mode
+            return relativeBase + (int) value;
+        } else {
+            // Only position mode is otherwise permitted
+            return (int) value;
         }
     }
 
