@@ -43,6 +43,14 @@ public class ImprovedIntcodeExecutor {
         this.program = Arrays.copyOf(programArray, programArray.length + padding);
     }
 
+    public ImprovedIntcodeExecutor(final ImprovedIntcodeExecutor intcodeExecutor, final Queue<Integer> input) {
+        this.input = input;
+        this.program = Arrays.copyOf(intcodeExecutor.program, intcodeExecutor.program.length);
+        this.pointer = intcodeExecutor.pointer;
+        this.relativeBase = intcodeExecutor.relativeBase;
+        this.isTerminated = intcodeExecutor.isTerminated;
+    }
+
     public Queue<Long> getOutput() {
         return output;
     }
