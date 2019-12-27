@@ -79,7 +79,31 @@ public class RepairDroidProgram {
 
     public int getOxygenFillTime() {
         int fillTime = 0;
-        return fillTime;
+        Set<TreeNode> nodes = new HashSet<>();
+        nodes.add(nodeMap.get(oxygenSystem));
+        while (nodes.size() > 0) {
+            final Set<TreeNode> newNodes = new HashSet<>();
+            for (final TreeNode n : nodes) {
+                if (n.getParent() != null) {
+                    final Position parent = n.getParent().getPosition();
+                    if (area[parent.getY()][parent.getX()] != 2) {
+                        newNodes.add(n.getParent());
+                    }
+                }
+                if (n.getChildren().size() > 0) {
+                    for (final TreeNode c : n.getChildren()) {
+                        final Position child = c.getPosition();
+                        if (area[child.getY()][child.getX()] != 2) {
+                            newNodes.add(c);
+                        }
+                    }
+                }
+                area[n.getPosition().getY()][n.getPosition().getX()] = 2;
+            }
+            nodes = newNodes;
+            fillTime++;
+        }
+        return fillTime - 1;
     }
 
     public void printArea() {
@@ -104,7 +128,6 @@ public class RepairDroidProgram {
         final String program = FileUtils.readFileToString(new File("src/main/resources/15_input.txt"), "UTF-8");
         final RepairDroidProgram repairDroidProgram = new RepairDroidProgram(program);
         repairDroidProgram.exploreArea();
-        repairDroidProgram.printArea();
         System.out.println(repairDroidProgram.getMinimumStepsToOxygenSystem());
 
         // Part Two
